@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cryptography Algorithms</title>
+</head>
+<link rel="stylesheet" href="css/ui.css">
+<!-- utility class -->
+<script src="js/slbcipher-util.js"></script>
+<!-- Lab 1 -->
+<script src="js/slbcipher-lab1.js"></script>
+<script src="js/slbcipher-binary.js"></script>
+<!-- Lab 2 -->
+<script src="js/slbcipher-scytale.js"></script>
+<script src="js/slbcipher-transposition.js"></script>
+<!-- Lab 3 -->
+<script src="js/slbcipher-affine.js"></script>
+<script src="js/slbcipher-hill.js"></script>
+<!-- Lab 4 -->
+<script src="js/slbcipher-vigenere.js"></script>
+<script src="js/slbcipher-adfgvx.js"></script>
+<!-- Lab 5 -->
+<script src="js/slbcipher-simpledes.js"></script>
+<!-- Lab 6 -->
+<script src="js/slbcipher-lab6.js"></script>
+<!-- Lab 7 -->
+<script src="js/slbcipher-lab7sdeshash.js"></script>
+<!-- Lab 8 -->
+<script src="js/slbcipher-diffiehellman.js"></script>
+<!-- Lab 10 -->
+<script src="js/slbcipher-lfsr.js"></script>
+<!-- Lab 11 -->
+<script src="js/slbcipher-lfsr3.js"></script>
+<script>
+
+    var selectedCipher = "lab1";
+
+    /**
+     * Selects UI component to show.
+     */
+    function onCipherSelect() {
+        var prevSelectedCipher = selectedCipher;
+        selectedCipher = document.getElementById("cipher-id").value;
+
+        var formName = selectedCipher + "-cipher-form";
+        var selectedForm = document.getElementById(formName);
+        var cipherModule = slbcipher[selectedCipher]();
+        var isCipher = cipherModule.init(selectedForm);
+
+        document.getElementById("btnEncrypt").style.visibility = (isCipher != undefined && isCipher == false) ? 'hidden' : 'visible';
+        document.getElementById("btnDecrypt").style.visibility = (isCipher != undefined && isCipher == false) ? 'hidden' : 'visible';
+        document.getElementById(prevSelectedCipher + "-cipher-section").className = "form-hidden";
+        document.getElementById(selectedCipher + "-cipher-section").className = "form-visible";
+        document.getElementById("cipher-code").href = "js/slbcipher-" + selectedCipher + ".js";
+    }
+
+
+    /**
+     * Invokes the encryption method of a cipher.
+     */
+    function doEncrypt() {
+        var formName = selectedCipher + "-cipher-form";
+        var selectedForm = document.getElementById(formName);
+
+        if (slbcipher[selectedCipher] == undefined) {
+            alert('cipher ' + selectedCipher + ' is not supported');
+            return;
+        }
+
+        try {
+            var cipherModule = slbcipher[selectedCipher]();
+            cipherModule.init(selectedForm);
+
+            var inputText = document.getElementById(selectedCipher + "-cipher-plain-text").value;
+            document.getElementById(selectedCipher + "-cipher-plain-text").value = "";
+            document.getElementById(selectedCipher + "-cipher-encrypted-text").value = cipherModule.encrypt(inputText);
+
+        } catch(e) {
+            alert(e);
+        }
+
+    }
+
+    /**
+     * Invokes the decryption method of a cipher.
+     */
+    function doDecrypt() {
+        var formName = selectedCipher + "-cipher-form";
+        var selectedForm = document.getElementById(formName);
+
+        if (slbcipher[selectedCipher] == undefined) {
+            alert('cipher ' + selectedCipher + ' is not supported');
+            return;
+        }
+
+        try {
+            var cipherModule = slbcipher[selectedCipher]();
+            cipherModule.init(selectedForm);
+
+            var inputText = document.getElementById(selectedCipher + "-cipher-encrypted-text").value;
+            document.getElementById(selectedCipher + "-cipher-encrypted-text").value = "";
+            document.getElementById(selectedCipher + "-cipher-plain-text").value = cipherModule.decrypt(inputText);
+        } catch(e) {
+            alert(e);
+        }
+
+    }
+</script>
+<!------------------------------------->
+<!----- LFSR Binary UI Methods -------->
+<!------------------------------------->
+<script language="javascript">
+
+    var lfsrModule = slbcipher.lfsr();
+    var lfsrRecords = [];
+
+    /**
+     * Update LFSR instance.
+     */
+    function updateLfsr() {
+        var iv = parseInt(document.getElementById('lfsr-cipher-iv').value, 2);
+        var lf = parseInt(document.getElementById('lfsr-cipher-lf').value, 2);
+        var config = {iv: iv, lf: lf};
+        lfsrModule = slbcipher.lfsr(config);
+    }
+
+    /**
+     * Randomly generates sample records.
+     */
+    function initializeLfsrRecords(count) {
+
+        var possibleFNames = [
+                                "Pedro", "Leonardo", "Kapote", "Dan", "Steve",
+                                "Mick", "Michael", "Jose", "Stephen", "Harvey",
+                                "Barry", "Helen", "Van", "Maria", "Sharon",
+                                "Claire", "Chi"
+                              ];
+        var possibleLNames = [
+                                "Tan", "Blank", "Ford", "Jordan", "Adams",
+                                "Kee", "Lee", "deLima", "delaCruz", "Prostasio", "Horacio",
+                                "Procopio", "Tinola", "Patola", "Arinola", "Escabeche",
+                                "Lechugas", "Almo", "Mansanas", "de Caprio", "Jobs",
+                                "Sambo", "Tado", "Taran", "Kamote", "Chu",
+                                "See", "Shu", "Hello"
+                              ];
+
+        var records = [];
+        for (var i =0; i < count; i++) {
+            var fname = possibleFNames[Math.floor(Math.random()*possibleFNames.length)];
+            var lname = possibleLNames[Math.floor(Math.random()*possibleLNames.length)];
+            var age = Math.ceil(Math.random()*100) + 1;
+            var income = Math.floor(Math.random()*200000) + 10000;
+            records.push({firstName: fname, lastName: lname, age: age, income: income});
+        }
+
+        records.forEach(function(item, idx) {
+            item.id = idx;
+            item.rid = '';
+        });
+
+        records.sort(function(a, b) {
+           if (a.id < b.id) {
+               return -1;
+           } else if (a.id > b.id) {
+               return 1;
+           } else {
+               return 0;
+           }
+        });
+        return records;
+    }
+
+    /**
+     * Sets JSON value to Text area field.
+     */
+    function setLfsrJsonTextAreaRecords(elementId, records) {
+        var recordsJson = document.getElementById(elementId + "Json");
+        recordsJson.value = JSON.stringify(records, null, 4);
+    }
+
+    /**
+     * Populates LFSR recrds to HTML table.
+     */
+    function populateLfsrRecordsTable(elementId, records) {
+        var table = document.getElementById(elementId);
+        records.forEach(function(item, idx) {
+            var row = table.insertRow(idx+1);
+            row.insertCell(0).innerHTML = item.id;
+            row.insertCell(1).innerHTML = item.rid;
+            row.insertCell(2).innerHTML = item.firstName;
+            row.insertCell(3).innerHTML = item.lastName;
+            row.insertCell(4).innerHTML = item.age;
+        });
+        setLfsrJsonTextAreaRecords(elementId, records);
+    }
+
+    /**
+     * Clears LFSR UI table and records.
+     */
+    function clearLfsrRecordsArray(records) {
+        records.forEach(function(item, idx) {
+            item.rid = '';
+        });
+        records.sort(function(a, b) {
+            if (a.id < b.id) {
+                return -1;
+            } else if (a.id > b.id) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+    }
+
+    /**
+     * Deletes LFSR UI Table records.
+     */
+    function deleteTableRecords(elementId, records) {
+        var table = document.getElementById(elementId);
+        while(table.rows.length > 1) {
+            table.deleteRow(1);
+        }
+        setLfsrJsonTextAreaRecords(elementId, records);
+    }
+
+    /**
+     * Reset records order to original ordering.
+     */
+    function resetRecordsTable(elementId, records) {
+        clearLfsrRecordsArray(records);
+        deleteTableRecords(elementId, records);
+        populateLfsrRecordsTable(elementId, records);
+    }
+
+    /**
+     * Marks LFSR records for sorting. Only records marked 1 is sorted.
+     */
+    function markRecordsForSorting() {
+        var value = lfsrModule.random();
+        var table = document.getElementById("lfsrRecords");
+        for (var i = 7; i >= 0; i--) {
+            if (value & 0x01) {
+                lfsrRecords[i].rid = 1;
+            } else {
+                lfsrRecords[i].rid = 0;
+            }
+            table.rows[i+1].style.background = (lfsrRecords[i].rid) ? "red" : null;
+            value = value >> 1;
+            table.rows[i+1].cells[1].innerHTML = lfsrRecords[i].rid;
+        }
+        setLfsrJsonTextAreaRecords("lfsrRecords", lfsrRecords);
+    }
+
+    /**
+     * Sorts all records marked.
+     *
+     */
+    function sortRecordsForSorting() {
+
+        // copy all records to be sorted
+        var tmpRecords = [];
+        lfsrRecords.forEach(function(item, idx) {
+            if (item.rid == 1) {
+                tmpRecords.push(item);
+            }
+        });
+
+        // sort records to be sorted
+        tmpRecords.sort(function(a, b) {
+            if (a.age < b.age) {
+                return -1;
+            } else if (a.age > b.age) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+
+        // copy records to records array
+        var tmpRecordsIdx = 0;
+        for (var recordIdx = 0; recordIdx < lfsrRecords.length; recordIdx++) {
+            if (lfsrRecords[recordIdx].rid == 1) {
+                lfsrRecords[recordIdx] = tmpRecords[tmpRecordsIdx++];
+            }
+        }
+
+        deleteTableRecords('lfsrRecords', lfsrRecords);
+        populateLfsrRecordsTable('lfsrRecords', lfsrRecords);
+
+        var table = document.getElementById("lfsrRecords");
+        for (var i = 7; i >= 0; i--) {
+            table.rows[i+1].style.background = (lfsrRecords[i].rid == 1) ? "red" : null;
+        }
+
+    }
+
+</script>
+
+<!------------------------------------->
+<!----- LFSR 3-Value UI Methods ------->
+<!------------------------------------->
+<script>
+
+    /**
+     * LFS3 UI Methods
+     */
+    var lfsr3Module1 = slbcipher.lfsr3({iv: "012", lf: "021"});
+    var lfsr3Module2 = slbcipher.lfsr3({iv: "001", lf: "021"});
+    var lfsr3Records1 = initializeLfsrRecords(Math.pow(3,3));
+    var lfsr3Records2 = initializeLfsrRecords(Math.pow(3,3));
+
+    /**
+     * Updates LFSR module to use new IV and LF values.
+     */
+    function updateLfsr3() {
+        var iv1 = document.getElementById('lfsr3-cipher-iv').value;
+        var iv2 = document.getElementById('lfsr3-cipher-iv2').value;
+        var lf = document.getElementById('lfsr-cipher-lf').value;
+        lfsr3Module1 = slbcipher.lfsr3({iv: iv1, lf: lf});
+        lfsr3Module2 = slbcipher.lfsr3({iv: iv2, lf: lf});
+    }
+
+    /**
+     * Populates LFSR 3-value records.
+     *
+     */
+    function populateLfsr3RecordsTable(elementId, records) {
+        var table = document.getElementById(elementId);
+        records.forEach(function(item, idx) {
+            var row = table.insertRow(idx+1);
+            row.insertCell(0).innerHTML = item.id;
+            row.insertCell(1).innerHTML = item.rid;
+            row.insertCell(2).innerHTML = item.firstName;
+            row.insertCell(3).innerHTML = item.lastName;
+            row.insertCell(4).innerHTML = item.age;
+            row.insertCell(5).innerHTML = "$" + formatNumberToCurrency(item.income);
+            row.style.background = (item.copy) ? "red" : null;
+        });
+        setLfsrJsonTextAreaRecords(elementId, records);
+    }
+
+    /**
+     * Formats number with comma.
+     */
+    function formatNumberToCurrency(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ".00";
+    }
+
+    /**
+     * Marks records for copying depending on the marker selected.
+     */
+    function lfsr3MarkRecordsForCopying() {
+        var value = lfsr3Module1.random();
+        var value2 = lfsr3Module2.random();
+        var table = document.getElementById("lfsr3Records1");
+        var table2 = document.getElementById("lfsr3Records2");
+        var selectorValue = document.getElementById("lfsr3-cipher-selector").value;
+        var selectorValue2 = document.getElementById("lfsr3-cipher-selector2").value;
+        for (var i = value.length - 1; i >=0; i--) {
+            lfsr3Records1[i].rid = value.charAt(i);
+            lfsr3Records2[i].rid = value2.charAt(i);
+            lfsr3Records1[i].copy = (lfsr3Records1[i].rid == selectorValue && lfsr3Records2[i].rid == selectorValue2);
+            table.rows[i+1].cells[1].innerHTML = lfsr3Records1[i].rid;
+            table2.rows[i+1].cells[1].innerHTML = lfsr3Records2[i].rid;
+            table.rows[i+1].style.background = null;
+            table2.rows[i+1].style.background = null;
+            for(var c = 0; c < table.rows[i+1].cells.length; c++) {
+                table.rows[i+1].cells[c].style.background = null;
+            }
+            for(var c = 0; c < table2.rows[i+1].cells.length; c++) {
+                table2.rows[i+1].cells[c].style.background = null;
+            }
+            table2.rows[i+1].style.background = (lfsr3Records1[i].copy) ? "gray" : null;
+            table.rows[i+1].style.background = (lfsr3Records1[i].copy) ? "red" : null;
+            table2.rows[i+1].style.background = (lfsr3Records1[i].copy) ? "gray" : null;
+        }
+        setLfsrJsonTextAreaRecords("lfsr3Records1", lfsr3Records1);
+        setLfsrJsonTextAreaRecords("lfsr3Records2", lfsr3Records2);
+    }
+
+    /**
+     * Swaps age values of list 1 and list 2.
+     */
+    function copyLsf3Records() {
+        var table1 = document.getElementById("lfsr3Records1");
+        var table2 = document.getElementById("lfsr3Records2");
+        for (var i = 0; i < lfsr3Records1.length; i++) {
+            if (lfsr3Records1[i].copy) {
+                var age  = lfsr3Records2[i].age;
+                lfsr3Records2[i].age = lfsr3Records1[i].age;
+                lfsr3Records1[i].age = age;
+                table1.rows[i+1].cells[4].innerHTML = Number(lfsr3Records1[i].age).toString();
+                table2.rows[i+1].cells[4].innerHTML = Number(lfsr3Records2[i].age).toString();
+                table1.rows[i+1].cells[4].style.background = (lfsr3Records1[i].copy) ? "gray" : null;
+                table2.rows[i+1].cells[4].style.background = (lfsr3Records1[i].copy) ? "red" : null;
+                lfsr3Records1[i].copy = false; // unset, since we already swapped it
+            }
+        }
+        setLfsrJsonTextAreaRecords("lfsr3Records1", lfsr3Records1);
+        setLfsrJsonTextAreaRecords("lfsr3Records2", lfsr3Records2);
+    }
+
+    /**
+     * Generates new test records for LFSR3 demo.
+     */
+    function resetLfsr3RecordsTable() {
+        lfsr3Records1 = initializeLfsrRecords(Math.pow(3,3));
+        lfsr3Records2 = initializeLfsrRecords(Math.pow(3,3));
+        deleteTableRecords('lfsr3Records1', lfsr3Records1);
+        deleteTableRecords('lfsr3Records2', lfsr3Records2);
+        populateLfsr3RecordsTable("lfsr3Records1", lfsr3Records1);
+        populateLfsr3RecordsTable("lfsr3Records2", lfsr3Records2);
+    }
+
+</script>
+<body align="center">
+<h1 align="center">Cryptography Algorithms</h1>
+<h3 align="center">Laboratory work</h3>
+<table align="center" width="450">
+    <tr>
+        <th align="right">Select Module</th>
+        <td colspan="2">
+            <select id="cipher-id" onchange="onCipherSelect()">
+                <option value="lab1" selected>Lab 1: Guess Number, Calculate Multiplication/Division</option>
+                <option value="binary">Lab 1: Output ASCII Code, Decimal to Binary Converter</option>
+                <option value="scytale">Lab 2: Scytale Cipher</option>
+                <option value="transposition">Lab 2: Transposition Cipher</option>
+                <option value="affine">Lab 3: Affine Cipher</option>
+                <option value="hill">Lab 3: Hill Cipher</option>
+                <option value="vigenere">Lab 4: Vigenere Cipher</option>
+                <option value="adfgvx">Lab 4: German ADFGVX Cipher</option>
+                <option value="simpledes">Lab 5: Simple DES Cipher</option>
+                <option value="lab6">Lab 6: Euclidean algorithm and Multiplicative inverse of mod N</option>
+                <option value="lab7sdeshash">Lab 7 - Hash using Simple DES</option>
+                <option value="diffiehellman">Lab 8: Diffie-Hellman</option>
+                <option value="lfsr">Lab 10: LFSR - Binary</option>
+                <option value="lfsr3">Lab 11: LFSR - 3-Valued</option>
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3" align="center"><div align="center"><a id="cipher-code" href="">View Javascript Source</a></div></td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div id="lab1-cipher-section" align="center" class="form-visible">
+                <h4>Guess Number and Multiply/Divide two numbers</h4>
+                <h5>Part 1</h5>
+                <script>
+                    var lab1Module = slbcipher.lab1();
+
+                    /**
+                     * Guessing game.
+                     */
+                    function guessNumber() {
+                        lab1Module.generateNumber();
+                        var correctAnswer = false;
+                        for (var i = 0; i < 3; i++) {
+                            var response = prompt("Guess the Number:");
+                            if (response == null) {
+                                break;
+                            } else {
+                                var correct = lab1Module.getGuessAnswer();
+                                if (parseInt(response) == correct) {
+                                    alert("Good work");
+                                    correctAnswer = true;
+                                } else {
+                                    alert("Not matched.");
+                                }
+                            }
+                        }
+                        if (!correctAnswer) {
+                            alert("Correct answer is " + lab1Module.getGuessAnswer());
+                        }
+                    }
+
+                    /**
+                     * Part 2. Multiply/Divide two numbers.
+                     *
+                     * @param operation
+                     */
+                    function calculate(operation) {
+                        var value1 = document.getElementById("value1").value;
+                        if (isNaN(value1)) {
+                            alert('1st Number is not a number');
+                            return;
+                        }
+                        var value2 = document.getElementById("value2").value;
+                        if (isNaN(value2)) {
+                            alert('2nd Number is not a number');
+                            return;
+                        }
+                        var result = lab1Module.calculate(parseInt(value1), parseInt(value2), operation);
+                        document.getElementById("result").innerHTML = Number(result).toString();
+                    }
+
+                </script>
+                Play guessing game. You have 3 attempts. <input type="button" value="Start" onclick="guessNumber()"/>
+                <p/>
+                <h5>Part 2</h5>
+                <table align="center" width="100%" border="1">
+                    <tr>
+                        <td>1st Number</td>
+                        <td><input type="text" id="value1" size="8" value=""/></td>
+                    </tr>
+                    <tr>
+                        <td>2nd Number</td>
+                        <td><input type="text" id="value2" size="8" value=""/></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="center">
+                            <input type="button" value="Multiply" onclick="calculate('x')"/>&nbsp;
+                            <input type="button" value="Divide" onclick="calculate('/')"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>The result is:</td>
+                        <td>
+                            <div id="result"/>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="binary-cipher-section" class="form-hidden">
+                <h4>String to ASCII codes</h4>
+                <script language="JavaScript">
+                    function updateAsciiCodes() {
+                        var value = document.getElementById("string-plain-text").value;
+                        document.getElementById("string-ascii-codes").value = binaryCodec.strToAsciiCode(value);
+                    }
+                </script>
+                <table width="100%">
+                    <tr>
+                        <td>Input String</td>
+                        <td><input type="text" id="string-plain-text" size="40" onkeypress="setTimeout(updateAsciiCodes, 100);"/></td>
+                    </tr>
+                    <tr>
+                        <td>ASCII String</td>
+                        <td><textarea type="text" readonly id="string-ascii-codes" rows="10" cols="40" size="40"></textarea></td>
+                    </tr>
+                </table>
+                <h4>Decimal to Binary</h4>
+                <form id="binary-cipher-form">
+                    <script>
+                        var binaryCodec = slbcipher.binary();
+                        function convertToBinary() {
+                            var value = document.getElementById("decimal-number").value;
+                            if (isNaN(value)) {
+                                alert('Input text is not a number');
+                                return;
+                            }
+                            document.getElementById("decimal-number").value = "";
+                            document.getElementById("binary-text").value = binaryCodec.toBinary(parseInt(value));
+                        }
+                        function convertToDecimal() {
+                            var value = document.getElementById("binary-text").value;
+                            if (!slbcipher.isValidBinary(value, 1024)) {
+                                alert('Input text is not a binary value');
+                                return;
+                            }
+                            document.getElementById("binary-text").value = "";
+                            document.getElementById("decimal-number").value = binaryCodec.toDecimal(value);
+                        }
+                    </script>
+                    <table width="100%">
+                        <tr>
+                            <td>Decimal Number</td>
+                            <td><input type="text" id="decimal-number" size="40" />&nbsp;
+                                <input type="button" value="To Binary" onclick="convertToBinary()" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Binary Number</td>
+                            <td><input type="text" id="binary-text" size="40" />&nbsp;<input type="button" value="To Decimal" onclick="convertToDecimal()" />
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="scytale-cipher-section" class="form-hidden">
+                <h4>Spartan Scytale Cipher</h4>
+                <form id="scytale-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td>Key</td>
+                            <td><input id="scytale-input-key" min="0" max="99" type="number" value="4" size="3" /></td>
+                        </tr>
+                        <tr>
+                            <td>Pad Character</td>
+                            <td><input id="scytale-input-pad" type="text" value="-" size="2" /></td>
+                        </tr>
+                        <tr>
+                            <td>Plain Text</td>
+                            <td><textarea id="scytale-cipher-plain-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Cipher Text</td>
+                            <td><textarea id="scytale-cipher-encrypted-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="transposition-cipher-section" class="form-hidden">
+                <h4>Transposition Cipher</h4>
+                <form id="transposition-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td>Key</td>
+                            <td><input type="text" id="transposition-cipher-key" value="maine" size="32"/></td>
+                        </tr>
+                        <tr>
+                            <td>Pad</td>
+                            <td><input type="text" id="transposition-cipher-pad" value="-" size="4"/></td>
+                        </tr>
+                        <tr>
+                            <td>Plain Text</td>
+                            <td><textarea id="transposition-cipher-plain-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Cipher Text</td>
+                            <td><textarea id="transposition-cipher-encrypted-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="affine-cipher-section" class="form-hidden">
+                <h4>Affine Cipher</h4>
+                <form id="affine-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td>Key 1</td>
+                            <td><input type="text" id="affine-cipher-key1" value="5" size="3"/></td>
+                        </tr>
+                        <tr>
+                            <td>Key 2</td>
+                            <td><input type="text" id="affine-cipher-key2" value="3" size="3"/></td>
+                        </tr>
+                        <tr>
+                            <td>Plain Text</td>
+                            <td><textarea id="affine-cipher-plain-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Cipher Text</td>
+                            <td><textarea id="affine-cipher-encrypted-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="hill-cipher-section" class="form-hidden">
+                <h4>Hill Cipher</h4>
+                <form id="hill-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td>Key (2x2) matrix</td>
+                            <td>
+                                <input type="text" id="hill-cipher-key00" min="0" max="25" type="number"  value="11" size="1"/>&nbsp;<input type="text" min="0" max="25" type="number" id="hill-cipher-key01" value="8" size="1"/><br/>
+                                <input type="text" id="hill-cipher-key10" min="0" max="25" type="number" value="3" size="1"/>&nbsp;<input type="text" id="hill-cipher-key11" type="number" min="0" max="25" value="7" size="1"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Plain Text</td>
+                            <td><textarea id="hill-cipher-plain-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Cipher Text</td>
+                            <td><textarea id="hill-cipher-encrypted-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="vigenere-cipher-section" class="form-hidden">
+                <h4>Vigenere Cipher</h4>
+                <form id="vigenere-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td>Key</td>
+                            <td><input type="text" id="vigenere-cipher-key" value="venus" size="30"/></td>
+                        </tr>
+                        <tr>
+                            <td>Char Set</td>
+                            <td><input type="text" id="vigenere-cipher-charset" value="abcdefghijklmnopqrstuvwxyz0123456789 " readonly size="40"/></td>
+                        </tr>
+                        <tr>
+                            <td>Plain Text</td>
+                            <td><textarea id="vigenere-cipher-plain-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Cipher Text</td>
+                            <td><textarea id="vigenere-cipher-encrypted-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="adfgvx-cipher-section" class="form-hidden">
+                <h4>German ADFGVX Cipher</h4>
+                <form id="adfgvx-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td>Key</td>
+                            <td><input type="text" id="adfgvx-cipher-key" value="security" size="32"/></td>
+                        </tr>
+                        <tr>
+                            <td>Plain Text</td>
+                            <td><textarea id="adfgvx-cipher-plain-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Cipher Text</td>
+                            <td><textarea id="adfgvx-cipher-encrypted-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="simpledes-cipher-section" class="form-hidden">
+                <h4>Simple DES Cipher</h4>
+                <form id="simpledes-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td>Key</td>
+                            <td>
+                                <script language="javascript">
+                                    function onBtnGenerateKey() {
+                                        try {
+                                            var value = document.getElementById('simpledes-cipher-key').value;
+                                            var intValue = parseInt(value, 2);
+                                            var desCipher = slbcipher.simpledes({key:intValue});
+                                            var desKeys = desCipher.generateKey(intValue);
+                                            document.getElementById('simpledes-key-bits').innerHTML = slbcipher.padLeftToLen(value, "0");
+                                            document.getElementById('simpledes-key-key1').innerHTML = slbcipher.padLeftToLen(Number(desKeys.key1).toString(2), 8, "0");
+                                            document.getElementById('simpledes-key-key2').innerHTML = slbcipher.padLeftToLen(Number(desKeys.key2).toString(2), 8, "0");
+                                        } catch(e) {
+                                            alert("Error in key generation: " + e.message);
+                                        }
+                                    }
+                                </script>
+                                <input type="text" id="simpledes-cipher-key" value="1010101010" min="10" max="10" size="10" onchange="onBtnGenerateKey();" />
+                                &nbsp;<input type="button" value="Generate Key" onclick="onBtnGenerateKey();" />
+                            &nbsp;   <p/>
+                                <li>Bits:&nbsp;<span id="simpledes-key-bits"></span>&nbsp;
+                                <li>Key1:&nbsp;<span id="simpledes-key-key1"></span>&nbsp;
+                                <li>Key2:&nbsp;<span id="simpledes-key-key2"></span>&nbsp;
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Plain Text</td>
+                            <td><textarea id="simpledes-cipher-plain-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Cipher Text</td>
+                            <td><textarea id="simpledes-cipher-encrypted-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="lab6-cipher-section" class="form-hidden">
+                <form id="lab6-cipher-form">
+                    <h4>Lab 6 - Euclidean algorithm or GCD</h4>
+                    <table width="100%">
+                        <tr>
+                            <td>Input 1</td>
+                            <td align="left">
+                                <input type="number" id="lab6-gcd-input1" value="1" size="32" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Input 2</td>
+                            <td align="left">
+                                <input type="number" id="lab6-gcd-input2" value="3" size="32" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Result</td>
+                            <td align="left"><span id="lab6-gcd-result"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" align="center">
+                                <input type="button" value="Compute GCD"
+                                       onclick="document.getElementById('lab6-gcd-result').innerHTML = slbcipher.gcd(parseInt(document.getElementById('lab6-gcd-input1').value), parseInt(document.getElementById('lab6-gcd-input2').value));" />
+                            </td>
+                        </tr>
+                    </table>
+                    <h4>Lab 6 - Inverse Mod N</h4>
+                    <table width="100%">
+                        <tr>
+                            <td>Input 1</td>
+                            <td align="left">
+                                <input type="number" id="lab6-imod-input1" value="5" size="32" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Input 2 (mod N)</td>
+                            <td align="left">
+                                <input type="number" id="lab6-imod-input2" value="26" size="32" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Result</td>
+                            <td align="left"><span id="lab6-imod-result"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" align="center">
+                                <input type="button" value="Compute Mult. Inverse"
+                                       onclick="document.getElementById('lab6-imod-result').innerHTML = slbcipher.inverseMod(parseInt(document.getElementById('lab6-imod-input1').value), parseInt(document.getElementById('lab6-imod-input2').value));" />
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="lab7sdeshash-cipher-section" class="form-hidden">
+                <h4>Hash Function using Simple DES Encryption</h4>
+                <form id="lab7sdeshash-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td>Simple DES Key</td>
+                            <td>
+                                <script language="javascript">
+
+                                    function onLab7SdesHashBtnGenerateKey() {
+                                        try {
+                                            var value = document.getElementById('lab7sdeshash-cipher-key').value;
+                                            var intValue = parseInt(value, 2);
+                                            var desCipher = slbcipher.simpledes();
+                                            var desKeys = desCipher.generateKey(intValue);
+                                            document.getElementById('lab7sdeshash-key-bits').innerHTML = slbcipher.padLeftToLen(value, "0");
+                                            document.getElementById('lab7sdeshash-key-key1').innerHTML = slbcipher.padLeftToLen(Number(desKeys.key1).toString(2), 8, "0");
+                                            document.getElementById('lab7sdeshash-key-key2').innerHTML = slbcipher.padLeftToLen(Number(desKeys.key2).toString(2), 8, "0");
+                                        } catch(e) {
+                                            alert("Error in key generation: " + e.message);
+                                        }
+                                    }
+
+                                    function onLab7SdesHashCreate() {
+                                        var keyValue = document.getElementById('lab7sdeshash-cipher-key').value;
+                                        var inputText = document.getElementById('lab7sdeshash-cipher-plain-text').value;
+                                        var hashModule = slbcipher.lab7sdeshash({key: parseInt(keyValue, 2) })
+                                        try {
+                                            var outputHash = hashModule.hash(inputText);
+                                            document.getElementById('lab7sdeshash-cipher-hash-text').value =
+                                                    "HashResult:\n" +
+                                                    "ASCII Code: " + outputHash + "\n" +
+                                                    "Hex: 0x" + slbcipher.padLeftToLen(Number(outputHash).toString(16).toUpperCase(), 2, "0") + "\n" +
+                                                    "Bits: " + slbcipher.padLeftToLen(Number(outputHash).toString(2), 8, "0");
+                                        } catch(e) {
+                                            alert(e);
+                                        }
+                                    }
+
+                                </script>
+                                <input type="text" id="lab7sdeshash-cipher-key" value="1010101010" min="10" max="10" size="10" onchange="onLab7SdesHashBtnGenerateKey();" />
+                                &nbsp<input type="button" value="Generate Key" onclick="onLab7SdesHashBtnGenerateKey();" /><p/>
+                                <li>Bits:&nbsp;<span id="lab7sdeshash-key-bits"></span>&nbsp;
+                                <li>Key1:&nbsp;<span id="lab7sdeshash-key-key1"></span>&nbsp;
+                                <li>Key2:&nbsp;<span id="lab7sdeshash-key-key2"></span>&nbsp;
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Input Text</td>
+                            <td><textarea id="lab7sdeshash-cipher-plain-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Hash Value</td>
+                            <td><textarea id="lab7sdeshash-cipher-hash-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <input type="button" value="Generate Hash" onclick="onLab7SdesHashCreate();" />
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="diffiehellman-cipher-section" class="form-hidden">
+                <h4>Diffie-Hellman Key Exchange</h4>
+                <form id="diffiehellman-cipher-form">
+                    <script language="javascript">
+                        function onRunDiffieHellman() {
+                            try {
+
+                                var diffiehellman = slbcipher.diffiehellman(null);
+                                diffiehellman.init(document.getElementById("diffiehellman-cipher-form"));
+                                var aliceKey = diffiehellman.getPublicKey();
+                                var bobKey = diffiehellman.getPublicKey();
+                                var alicePrivateKey = diffiehellman.getPrivateKey(aliceKey.privateRandom, bobKey.publicKey);
+                                var bobPrivateKey = diffiehellman.getPrivateKey(bobKey.privateRandom, aliceKey.publicKey);
+
+                                document.getElementById('diffiehellman-cipher-init-p').value = diffiehellman.getP();
+                                document.getElementById('diffiehellman-cipher-init-g').value = diffiehellman.getG();
+                                document.getElementById('diffiehellman-cipher-alice-keys').innerHTML = formatUserKey2("A", diffiehellman.getP(), diffiehellman.getG(), aliceKey);
+                                document.getElementById('diffiehellman-cipher-bob-keys').innerHTML = formatUserKey2("B", diffiehellman.getP(), diffiehellman.getG(), bobKey);
+                                document.getElementById('diffiehellman-cipher-alice-private-key').innerHTML = formatPrivateKey2("b", "A", aliceKey, bobKey, alicePrivateKey);
+                                document.getElementById('diffiehellman-cipher-bob-private-key').innerHTML =  formatPrivateKey2("a", "B", bobKey, aliceKey, bobPrivateKey);
+
+                                var sdesAlice = slbcipher.simpledes({key: alicePrivateKey & 0x3FF});
+                                var plaintText = document.getElementById("diffiehellman-cipher-alice2bob-plain-text").value;
+                                var cipherText = sdesAlice.encrypt(plaintText);
+                                document.getElementById("diffiehellman-cipher-alice2bob-cipher-text").value = cipherText;
+
+                                var sdesBob = slbcipher.simpledes({key: bobPrivateKey & 0x3FF});
+                                var decText = sdesBob.decrypt(cipherText);
+                                document.getElementById("diffiehellman-cipher-alice2bob-decrypted-text").value = decText;
+
+                            } catch(e) {
+                                alert("Error: " + e.message);
+                            }
+                        }
+
+                        function formatUserKey2(name, p, g, key) {
+                            return "<table>" +
+                                    "<tr><td><b>" + name + " = random() = </b></td><td>" + key.privateRandom + "&nbsp;</td></tr>" +
+                                    "<tr><td><b>" + name.toLowerCase() + " = g<sup>" + name + "</sup> (mod p) = </b></td><td>" +
+                                            "<b>" + g + "<sup>" + key.privateRandom + "</sup> (mod " + p + ") = </b>"
+                                     + key.publicKey + "</td></tr>" +
+                                    "</table>";
+                        }
+
+                        function formatPrivateKey2(pubKey, randomKey, srcKey, targetKey, value) {
+                            return  "K = " + pubKey + "<sup>" + randomKey + "</sup> (mod p) =" +
+                                    " " + targetKey.publicKey + "<sup>" + srcKey.privateRandom + "</sup> (mod p) = "  + value;
+                        }
+
+                    </script>
+                    <table width="100%">
+                        <tr>
+                            <td valign="top"><b>p</b</td>
+                            <td align="left">
+                                <input type="number" id="diffiehellman-cipher-init-p" value="521" size="32" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><b>g</b></td>
+                            <td align="left">
+                                <input type="number" id="diffiehellman-cipher-init-g" value="10" size="32" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td align="center">
+                                <input type="button" value="Run Diffie-Hellman" onclick="onRunDiffieHellman();" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Alice Keys</td>
+                            <td><div id="diffiehellman-cipher-alice-keys" /></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Bob Keys</td>
+                            <td><div id="diffiehellman-cipher-bob-keys" /></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Computed K (Alice)</td>
+                            <td><div id="diffiehellman-cipher-alice-private-key" /></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Computed K (Bob)</td>
+                            <td><div id="diffiehellman-cipher-bob-private-key" /></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Alice Plain text Message to Bob</td>
+                            <td><textarea id="diffiehellman-cipher-alice2bob-plain-text" rows="8" cols="40">The quick brown fox</textarea></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Encrypted Message sent to Bob</td>
+                            <td><textarea id="diffiehellman-cipher-alice2bob-cipher-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Bob Decrypted Message</td>
+                            <td><textarea id="diffiehellman-cipher-alice2bob-decrypted-text" rows="8" cols="40"></textarea></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="lfsr-cipher-section" class="form-hidden">
+                <h4>LFSR</h4>
+                <form id="lfsr-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td valign="top">IV</td>
+                            <td><input type="text" id="lfsr-cipher-iv" value="001" size="8" /></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">LF</td>
+                            <td><input type="text" id="lfsr-cipher-lf" value="101" size="8" />
+                                &nbsp;<input type="button" value="Update LFSR" onclick="updateLfsr()" /></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Records</td>
+                            <td>
+                                <br/>
+                                &nbsp;<input type="button" value="Mark Records" onclick="markRecordsForSorting()" />
+                                &nbsp;<input type="button" value="Sort Records" onclick="sortRecordsForSorting()" />
+                                &nbsp;<input type="button" value="Reset Records" onclick="resetRecordsTable('lfsrRecords', lfsrRecords)" />
+                                <p/>
+                                <table id="lfsrRecords" border="1" width="100%">
+                                    <tr>
+                                        <th align="left">Id</th>
+                                        <th align="left">Sort Marker</th>
+                                        <th align="left">First Name</th>
+                                        <th align="left">Last Name</th>
+                                        <th align="left">Age</th>
+                                    </tr>
+                                </table>
+                                <br/>
+                                <p>JSON:<br/>
+                                <textarea id="lfsrRecordsJson" rows="30" cols="50"></textarea>
+                            </td>
+                            <script language="javascript">
+                                lfsrRecords = initializeLfsrRecords(8);
+                                populateLfsrRecordsTable("lfsrRecords", lfsrRecords);
+                            </script>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div id="lfsr3-cipher-section" class="form-hidden">
+                <h4>LFSR - 3-Valued</h4>
+                <form id="lfsr3-cipher-form">
+                    <table width="100%">
+                        <tr>
+                            <td valign="top">IV</td>
+                            <td><input type="text" id="lfsr3-cipher-iv" value="012" size="4" />&nbsp;Marker: <select id="lfsr3-cipher-selector">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                            </select></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">IV 2</td>
+                            <td><input type="text" id="lfsr3-cipher-iv2" value="001" size="4" />&nbsp;Marker: <select id="lfsr3-cipher-selector2">
+                                <option value="0">0</option>
+                                <option value="1" selected>1</option>
+                                <option value="2">2</option>
+                            </select></td>
+                        </tr>
+                        <tr>
+                            <td valign="top">LF</td>
+                            <td><input type="text" id="lfsr3-cipher-lf" value="021" size="8" />
+                                &nbsp;<input type="button" value="Update LFSR" onclick="updateLfsr3()" /></td>
+                        </tr>
+                        <tr>
+                            <td valign="top" colspan="2">
+                                <br/>
+                                <p align="center">
+                                    &nbsp;<input type="button" value="Generate Test Records" onclick="resetLfsr3RecordsTable();" />
+                                    &nbsp;<input type="button" value="Mark Records" onclick="lfsr3MarkRecordsForCopying()" />
+                                    &nbsp;<input type="button" value="Obfuscate Records" onclick="copyLsf3Records(lfsr3Records1, lfsr3Records2)" />
+                                </p>
+                                <table class="lfsr-table" border="1" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <th align="center">List 1</th>
+                                        <th align="center">List 2</th>
+                                    </tr>
+                                    <tr>
+                                        <td valign="top">
+                                            <table id="lfsr3Records1" border="1" width="100%">
+                                                <tr>
+                                                    <th align="left">Id</th>
+                                                    <th align="left">Marker</th>
+                                                    <th align="left">First Name</th>
+                                                    <th align="left">Last Name</th>
+                                                    <th align="left">Age</th>
+                                                    <th align="right">Income</th>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td valign="top">
+                                            <table id="lfsr3Records2" border="1" width="100%">
+                                                <tr>
+                                                    <th align="left">Id</th>
+                                                    <th align="left">Marker</th>
+                                                    <th align="left">First Name</th>
+                                                    <th align="left">Last Name</th>
+                                                    <th align="left">Age</th>
+                                                    <th align="right">Income</th>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <textarea id="lfsr3Records1Json" rows="30" cols="50"></textarea>
+                                        </td>
+                                        <td>
+                                            <textarea id="lfsr3Records2Json" rows="30" cols="50"></textarea>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <script language="javascript">
+                                populateLfsr3RecordsTable("lfsr3Records1", lfsr3Records1);
+                                populateLfsr3RecordsTable("lfsr3Records2", lfsr3Records2);
+                                updateLfsr3();
+                            </script>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td></td>
+        <td colspan="2" align="center">
+            <input type="button" id="btnEncrypt" onclick="doEncrypt()" value="Encrypt"/>&nbsp;
+            <input type="button" id="btnDecrypt" onclick="doDecrypt()" value="Decrypt"/>
+        </td>
+    </tr>
+</table>
+<script>
+    onCipherSelect();
+</script>
+</body>
+</html>
